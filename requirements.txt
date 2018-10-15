@@ -1,2 +1,15 @@
+cffi
+Click
 Flask
 Flask-SocketIO
+gevent
+greenlet
+gunicorn
+itsdangerous
+Jinja2
+MarkupSafe
+pycparser
+python-engineio
+python-socketio
+six
+Werkzeug
