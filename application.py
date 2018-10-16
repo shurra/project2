@@ -50,6 +50,9 @@ def on_join(data):
     print(data)
     username = data['user']
     room = data['room']
+    # Create channel, if no exist
+    if not data['c_name'] in [c.name for c in channels]:
+        new_channel(room)
     join_room(room)
     print(f"{username} has entered the room {room}. User id = {request.sid}")
     # TODO: send channel messages to user joined
