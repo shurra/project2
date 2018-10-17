@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
             else alert("Please enter your name");
         };
         //Listener for Enter key on input tag
-        loginForm.getElementsByTagName('input')[0].addEventListener('keyup', function(event) {
+        loginForm.getElementsByTagName('input')[0].addEventListener('keyup', (event) => {
             if (event.key === "Enter") {
                 // saveUser();
                 loginForm.getElementsByTagName('button')[0].click();
@@ -66,13 +66,18 @@ document.addEventListener('DOMContentLoaded', () => {
         //disable message input before join
         document.querySelector(".input-box_text").disabled = true;
         //join saved channel after page load
-        if (myStorage.getItem('current_channel')) {
+        if (myStorage.getItem('current_channel') && myStorage.getItem('username')) {
+            // console.log("Boolean(current_channel) = ", Boolean(myStorage.getItem('current_channel')));
+            console.log("Joining saved channel after page load, saved channel = \"", myStorage.getItem('current_channel'),
+                "\", saved user = \"", myStorage.getItem('username'), "\"");
             join_channel(myStorage.getItem('current_channel'), myStorage.getItem('username'));
         }
     });
+
+    socket.on('disconnect', () => {console.log("Server offline!")});
     //Receive channels update
     socket.on('channels', (data) => {
-        console.log("Channels received", data)
+        console.log("Channels received = ", data);
         channels_list(data);
     });
     //Receive users update
@@ -113,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (myStorage.getItem('current_channel') === item.dataset.chname) {
                     return null
                 }
+                console.log("joining channel \"", item.dataset.chname, "\", user \"", username, "\"")
                 join_channel(item.dataset.chname, username);
                 // console.log("Channel = ", item.dataset.chname);
                 document.querySelector('#channels_list').querySelectorAll('li').forEach((item) => {
@@ -137,13 +143,15 @@ document.addEventListener('DOMContentLoaded', () => {
             socket.emit('leave', {room: myStorage.getItem('current_channel'), user: user});
         }
         myStorage.setItem('current_channel', channel);
+        console.log("joining channel \"", channel, "\", user \"", user, "\"")
         socket.emit('join', {room: channel, user: user});
         var message_input = document.querySelector('.input-box_text');
         message_input.disabled = false;
         message_input.addEventListener('keyup', (event) => {
             if (event.key === "Enter" && message_input.value.length > 0) {
                 console.log(message_input.value);
-                var time = Date.now();
+                var current_date = new Date;
+                var time = current_date.getHours() + ":" + current_date.getMinutes() + ":" + current_date.getSeconds();
                 // console.log("Current time = ", time);
                 // console.log("Current time = ", new Date(time).getHours(), ":");
                 socket.emit('send post', {room: myStorage.getItem('current_channel'), user: user, time: time, text: message_input.value});

@@ -8,7 +8,7 @@ app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 socketio = SocketIO(app)
 
 
-channels = []
+channels = set()
 online_users = []
 channels_list = []
 
@@ -27,11 +27,13 @@ def on_connect():
 @socketio.on("new channel")
 def new_channel(data):
     # if not list(filter(lambda channel: channel['name'] == data['c_name'], channels)):
-    if not data['c_name'] in [c.name for c in channels]:
-        # channels.append({"name": data['c_name']})
-        channel = Channel(data['c_name'])
-        channels.append(channel)
-        print(f"Channel \"{channel.name}\"created ")
+    print(f"New channel event, channels list = {channels}, new channel name = {data['c_name']}")
+    # if len(channels) > 0:
+    # if not data['c_name'] in [c.name for c in channels]:
+    # channels.append({"name": data['c_name']})
+    channel = Channel(data['c_name'])
+    channels.add(channel)
+    print(f"Channel \"{channel.name}\"created ")
     # print(f"Channels list = {channels_list}")
     emit('channels', [c.name for c in channels], broadcast=True)
 
@@ -47,12 +49,13 @@ def new_channel(data):
 
 @socketio.on('join')
 def on_join(data):
-    print(data)
+    print(f"Join start, data = {data}")
     username = data['user']
     room = data['room']
     # Create channel, if no exist
-    if not data['c_name'] in [c.name for c in channels]:
-        new_channel(room)
+    if room not in [c.name for c in channels]:
+        print(f"Channel \'{room}\' not exist, creating")
+        new_channel({'c_name': room})
     join_room(room)
     print(f"{username} has entered the room {room}. User id = {request.sid}")
     # TODO: send channel messages to user joined
@@ -60,7 +63,7 @@ def on_join(data):
     channel = find(channels, room)
     channel.add_user(username)
     emit('users', channel.users, room=room)
-    print(f"Channel: {room}, joined users:{channel.users}")
+    print(f"Channel: {channel.name}, joined users:{channel.users}")
     emit('messages', channel.messages, room=room)
     # emit('messages', json, namespace=room)
     send(username + ' has entered the room.', room=room)
@@ -70,9 +73,15 @@ def on_join(data):
 def on_leave(data):
     username = data['user']
     room = data['room']
+    # TODO: check, if user joined channel
+    # if channels
     leave_room(room)
     channel = find(channels, room)
-    channel.del_user(username)
+    try:
+        channel.del_user(username)
+        emit('users', channel.users, room=room)
+    except:
+        print("error delete user from channel")
     print(f"{username} has left the room {room}")
     send(username + ' has left the room.', room=room)
 
