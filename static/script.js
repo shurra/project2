@@ -1,5 +1,5 @@
 const myStorage = window.localStorage;
-var username;
+// var username;
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -35,8 +35,8 @@ document.addEventListener('DOMContentLoaded', () => {
         //Show login form
         document.querySelector('#loginForm').style.display = 'block';
     } else {
-        username = myStorage.getItem('username');
-        document.querySelector('.user-menu_username').innerHTML = username;
+        // username = myStorage.getItem('username');
+        document.querySelector('.user-menu_username').innerHTML = myStorage.getItem('username');
     }
 
     // When connected, configure buttons
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (c_name) {
                 socket.emit('new channel', {'c_name': c_name});
                 //join that channel after creation
-                join_channel(c_name, username)
+                join_channel(c_name);
             }
         });
         //Enter key on text input for new channel
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // console.log("Boolean(current_channel) = ", Boolean(myStorage.getItem('current_channel')));
             console.log("Joining saved channel after page load, saved channel = \"", myStorage.getItem('current_channel'),
                 "\", saved user = \"", myStorage.getItem('username'), "\"");
-            join_channel(myStorage.getItem('current_channel'), myStorage.getItem('username'));
+            join_channel(myStorage.getItem('current_channel'));
         }
     });
 
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function messages_list(messages) {
         console.log("messages received =", messages);
-        console.log(document.querySelector('.message-history'));
+        // console.log(document.querySelector('.message-history'));
         document.querySelector('.message-history').innerHTML = messages_list_item({'messages': messages});
     }
 
@@ -114,12 +114,13 @@ document.addEventListener('DOMContentLoaded', () => {
         //Listeners for channels names
         document.querySelector('#channels_list').querySelectorAll('li').forEach((item) => {
             // console.log(item.dataset.chname);
+            console.log("Adding event listener to channel button", item.dataset.chname);
             item.addEventListener('click', () => {
                 if (myStorage.getItem('current_channel') === item.dataset.chname) {
                     return null
                 }
-                console.log("joining channel \"", item.dataset.chname, "\", user \"", username, "\"")
-                join_channel(item.dataset.chname, username);
+                console.log("joining channel \"", item.dataset.chname, "\", user \"", myStorage.getItem('username'), "\"")
+                join_channel(item.dataset.chname);
                 // console.log("Channel = ", item.dataset.chname);
                 document.querySelector('#channels_list').querySelectorAll('li').forEach((item) => {
                     item.classList.remove('active');
@@ -134,17 +135,17 @@ document.addEventListener('DOMContentLoaded', () => {
         })
     }
 
-    function join_channel(channel, user) {
+    function join_channel(channel) {
         //TODO: create channel and join, if channel in local storage, and not in server channels
 
         // Leave current channel, if joined
         console.log("saved channel = ", myStorage.getItem('current_channel'), "new channel = ", channel);
         if (myStorage.getItem('current_channel')) {
-            socket.emit('leave', {room: myStorage.getItem('current_channel'), user: user});
+            socket.emit('leave', {room: myStorage.getItem('current_channel'), user: myStorage.getItem('username')});
         }
         myStorage.setItem('current_channel', channel);
-        console.log("joining channel \"", channel, "\", user \"", user, "\"")
-        socket.emit('join', {room: channel, user: user});
+        console.log("joining channel \"", channel, "\", user \"", myStorage.getItem('username'), "\"")
+        socket.emit('join', {room: channel, user: myStorage.getItem('username')});
         var message_input = document.querySelector('.input-box_text');
         message_input.disabled = false;
         message_input.addEventListener('keyup', (event) => {
@@ -154,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 var time = current_date.getHours() + ":" + current_date.getMinutes() + ":" + current_date.getSeconds();
                 // console.log("Current time = ", time);
                 // console.log("Current time = ", new Date(time).getHours(), ":");
-                socket.emit('send post', {room: myStorage.getItem('current_channel'), user: user, time: time, text: message_input.value});
+                socket.emit('send post', {room: myStorage.getItem('current_channel'), user: myStorage.getItem('username'), time: time, text: message_input.value});
                 message_input.value = "";
             }
         });
