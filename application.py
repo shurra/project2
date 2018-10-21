@@ -29,28 +29,20 @@ def new_channel(data):
     # if not list(filter(lambda channel: channel['name'] == data['c_name'], channels)):
     print(f"New channel event, channels list = {channels}, new channel name = {data['c_name']}")
     # if len(channels) > 0:
-    # if not data['c_name'] in [c.name for c in channels]:
-    # channels.append({"name": data['c_name']})
-    channel = Channel(data['c_name'])
-    channels.add(channel)
-    print(f"Channel \"{channel.name}\"created ")
-    # print(f"Channels list = {channels_list}")
-    emit('channels', [c.name for c in channels], broadcast=True)
-
-
-# @socketio.on("user connected")
-# def new_user(data):
-#     print(f"new_user func start. username = {data}")
-#     if data not in online_users:
-#         print(f"Adding user {data} to list. ")
-#         online_users.append(data)
-#     emit('users', online_users, broadcast=True)
+    if data['c_name'] not in [c.name for c in channels]:
+        # channels.append({"name": data['c_name']})
+        channel = Channel(data['c_name'])
+        channels.add(channel)
+        print(f"Channel \"{channel.name}\"created ")
+        # print(f"Channels list = {channels_list}")
+        emit('channels', [c.name for c in channels], broadcast=True)
 
 
 @socketio.on('join')
 def on_join(data):
     print(f"Join start, data = {data}")
     username = data['user']
+    user_gender = data['gender']
     room = data['room']
     # Create channel, if no exist
     if room not in [c.name for c in channels]:
@@ -61,12 +53,12 @@ def on_join(data):
     # TODO: send channel messages to user joined
     print(f"Channels = {[channel.name for channel in channels]}")
     channel = find(channels, room)
-    channel.add_user(username)
+    channel.add_user(username, user_gender)
     emit('users', channel.users, room=room)
     print(f"Channel: {channel.name}, joined users:{channel.users}")
     emit('messages', channel.messages, room=room)
     # emit('messages', json, namespace=room)
-    send(username + ' has entered the room.', room=room)
+    # send(username + ' has entered the room.', room=room)
 
 
 @socketio.on('leave')
@@ -83,7 +75,7 @@ def on_leave(data):
     except:
         print("error delete user from channel")
     print(f"{username} has left the room {room}")
-    send(username + ' has left the room.', room=room)
+    # send(username + ' has left the room.', room=room)
 
 
 @socketio.on('send post')
@@ -100,20 +92,25 @@ class Channel:
 
     def __init__(self, name):
         self.name = name
-        self.messages = [{"user": "admin", "time": "00:00", "text": f"Wellcome to the {self.name}"}]
+        self.messages = [{"user": "admin", "time": "00:00", "text": f"Welcome to the {self.name}"}]
         self.users = []
 
     def add_message(self, message):
         self.messages.append(message)
-        self.messages = self.messages[:100]
+        if len(self.messages) > 100:
+            self.messages.pop(0)
+        print(f"Messages length = {len(self.messages)}")
 
-    def add_user(self, username):
-        if not username in self.users:
-            self.users.append(username)
+    def add_user(self, username, user_g):
+        user_data = {"username": username, "user_g": user_g}
+        if user_data not in self.users:
+            self.users.append({"username": username, "user_g": user_g})
 
     def del_user(self, username):
-        if username in self.users:
-            self.users.remove(username)
+        user_data = (item for item in self.users if item["username"] == username)
+        print(f"User data for remove = {user_data}")
+        if user_data in self.users:
+            self.users.remove(user_data)
 
 
 def find(list, value):

@@ -1,0 +1,105 @@
+#loginForm {
+    display: none;
+}
+
+.form-popup {
+    height: 100%;
+    width: 100%;
+    display: none;
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    background-color: rgb(0,0,0);
+    background-color: rgba(0,0,0, 0.9);
+    color: #ffffff;
+}
+
+body {
+    height: 100vh;
+}
+.header {
+    height: 50px;
+    font-weight: 900;
+    vertical-align: middle;
+}
+
+.main {
+    /*height: auto;*/
+    background-color: blueviolet;
+}
+
+.col_left {
+    background-color: #4d394b;
+    color: #ab9ba9;
+    border-style: solid solid;
+    border-width: 2px;
+    border-color: #372c36;
+}
+
+#messages {
+    overflow: scroll;
+}
+
+.footer {
+    /*background-color: #3e313c;*/
+}
+#user_menu {
+    background-color: #3e313c;
+    color: #ffffff;
+}
+
+.dark {
+    background-color: #3e313c;
+    color: #ffffff;
+}
+
+.channel {
+    color: #ffffff;
+    border-top-right-radius: 0.25rem;
+    border-bottom-right-radius: 0.25rem;
+    cursor: pointer;
+}
+
+.active {
+    background-color: #4c9689;
+}
+
+.form-container {
+    position: relative;
+    top: 46%;
+    /*width: 20%;*/
+    text-align: center;
+}
+
+.profile-pic {
+    display: inline-block;
+    float: left;
+    width: 36px;
+    height: 36px;
+    background-image: url(/static/img/avatar_f.png);
+    background-size: cover;
+}
+
+.listings_header {
+    color: #ab9ba9;
+}
+
+.message_username {
+    font-weight: 900;
+}
+
+.message_timestamp {
+    color: gray;
+    display: inline;
+}
+
+.message_content {
+	font-style: italic;
+	display: block;
+	min-height: 1rem;
+}
+
+.input-box_text {
+    width: 90%;
+}

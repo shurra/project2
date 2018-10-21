@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+{#<html lang="en">#}
+<head>
+{#    <meta charset="utf-8"/>#}
+{#    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>#}
+    <title>Roman Shkromyda. CS50's Web Programming with Python and JavaScript. Project2. </title>
+{#    <link href="https://fonts.googleapis.com/css?family=Lato:400,700,900" rel="stylesheet" type="text/css"/>#}
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.11/handlebars.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script id="channel_list_item" type="text/x-handlebars-template">
+        {% raw %}{{#each channels}}
+        <li class="channel" data-chname="{{ this }}">
+            <span># {{ this }}</span>
+        </li>
+        {{/each}}{% endraw %}
+    </script>
+    <script id="users_list_item" type="text/x-handlebars-template">
+        {% raw %}{{#each users}}
+        <li class="channel">
+            <a class="channel_name">
+                <span>{{ this }}</span>
+            </a>
+        </li>
+        {{/each}}{% endraw %}
+    </script>
+    <script id="messages_list_item" type="text/x-handlebars-template">
+        {% raw %}{{#each messages}}
+        <hr>
+        <div class="message">
+            <a class="message_profile-pic" href=""></a>
+            <a class="message_username" href="">{{ this.user }}</a>
+            <span class="message_timestamp">{{ this.time }}</span>
+            <span class="message_content">{{ this.text }}</span>
+        </div>
+        {{/each}}{% endraw %}
+    </script>
+
+</head>
+<body>
+<div class="form-popup" id="loginForm">
+    <div class="form-container">
+        <input type="text" placeholder="Enter Your name" required>
+        <button type="button" class="btn btn-primary">Login</button>
+    </div>
+</div>
+
+<div class="header">
+    <div class="team-menu">project2</div>
+    <div class="channel-menu">
+        <span class="channel-menu_name">
+            <span class="channel-menu_prefix">#</span>
+            admin
+        </span>
+    </div>
+</div>
+<div class="main">
+    <div class="listings">
+        <div class="listings_channels">
+            <h2 class="listings_header">Channels</h2>
+            <input type="text" placeholder="New channel">
+            <button class="btn unread" id="new_channel">Add</button>
+            <ul class="channel_list" id="channels_list">
+
+            </ul>
+        </div>
+        <div class="listings_direct-messages">
+            <h2 class="listings_header">Channel users</h2>
+            <ul class="channel_list" id="users_list">
+
+            </ul>
+        </div>
+    </div>
+    <div class="message-history">
+        No message yet. Select channel.
+    </div>
+</div>
+
+<div class="footer">
+    <div class="user-menu"><span class="user-menu_profile-pic"></span><span class="user-menu_username">Username</span>
+        <br>
+        <span class="connection_status">online</span>
+    </div>
+    <div class="input-box">
+        <input class="input-box_text" type="text"/>
+    </div>
+</div>
+</body>
+</html>
