@@ -2,7 +2,6 @@ const myStorage = window.localStorage;
 var user_arr;
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("Page loaded. Start JS.");
 //Templates for channel in channels list and user in users list
     var channel_list_item = Handlebars.compile(document.querySelector('#channel_list_item').innerHTML);
     var users_list_item = Handlebars.compile(document.querySelector('#users_list_item').innerHTML);
@@ -37,9 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
         //Show login form
         document.querySelector('#loginForm').style.display = 'block';
     } else {
-        console.log("user exist. hide login form");
         document.querySelector('#loginForm').style.display = 'none';
-        // username = myStorage.getItem('username');
         document.querySelector('.footer_username').innerHTML = myStorage.getItem('username');
         //set avatar
         if (localStorage.getItem('gender') === "male") {
@@ -51,11 +48,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // When connected, configure buttons
     socket.on('connect', () => {
-        console.log("Connected...");
         // new channel button
         const new_channel_form = document.querySelector('#new_channel');
         new_channel_form.addEventListener('submit', (e) => {
-            console.log(e);
             e.preventDefault();
             var c_name = new_channel_form.querySelector('input').value.trim();
             // if(!c_name.match(/^[0-9a-zA-Z]{1,16}$/)) {
@@ -74,8 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector(".input-box_text").disabled = true;
         //join saved channel after page load
         if (myStorage.getItem('current_channel') && myStorage.getItem('username')) {
-            // console.log("ONCONNECT--Joining saved channel after page load, saved channel = \"", myStorage.getItem('current_channel'),
-            //     "\", saved user = \"", myStorage.getItem('username'), "\"");
             join_channel(myStorage.getItem('current_channel'));
         }
         document.querySelector('.connection_status').innerHTML = "online";
@@ -83,18 +76,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('disconnect', () => {
-        console.log("Server offline!");
         document.querySelector('.connection_status').innerHTML = "offline";
         document.querySelector('.connection_status').style.color = "red";
     });
     //Receive channels update
     socket.on('channels', (data) => {
-        console.log("Channels received = ", data);
         channels_list(data);
     });
     //Receive users update
     socket.on('users', (data) => {
-        console.log("Users received ", data);
         // Set avatars url
         data.forEach((item) => {
             if (item['user_g'] === "male") {
@@ -112,13 +102,11 @@ document.addEventListener('DOMContentLoaded', () => {
         data.forEach((item) => {
             item['pic_url'] = user_arr.filter(_user => _user['username'] === item['user'])[0].pic_url;
         });
-        console.log("messages received =", data);
         messages_list(data);
     });
 
     //Receive message (post) in joined channel
     socket.on('post', (data) => {
-        // console.log("new message received", data);
         show_message(data);
     });
 
@@ -126,7 +114,6 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('message deleted', (data) => {
         const messages_container = document.querySelector('#messages');
         messages_container.querySelectorAll('.message').forEach((element) => {
-            console.log(element.querySelector('.message_username').innerHTML, ":", element.querySelector('.message_timestamp').innerHTML);
             if (element.querySelector('.message_username').innerHTML === data['user'] &&
                 element.querySelector('.message_timestamp').innerHTML === data['time'] &&
                 element.querySelector('.message_content').innerHTML === data['text']
@@ -159,7 +146,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('#channels_list').innerHTML = channel_list_item({'channels': channels});
         //Listeners for channels names
         document.querySelector('#channels_list').querySelectorAll('li').forEach((item) => {
-            console.log("Adding event listener to channel button", item.dataset.chname);
             item.addEventListener('click', () => {
                 if (myStorage.getItem('current_channel') === item.dataset.chname) {
                     return null
@@ -178,24 +164,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function join_channel(channel) {
         // Leave current channel, if joined
-        console.log("saved channel = ", myStorage.getItem('current_channel'), "new channel = ", channel);
         if (myStorage.getItem('current_channel')) {
             socket.emit('leave', {room: myStorage.getItem('current_channel'), user: myStorage.getItem('username')});
         }
         myStorage.setItem('current_channel', channel);
-        console.log("joining channel =", channel, ", user =", myStorage.getItem('username'), ", gender =", myStorage.getItem('gender'));
         socket.emit('join', {room: channel, user: myStorage.getItem('username'), gender: myStorage.getItem('gender')});
         var message_input = document.querySelector('.input-box_text');
         message_input.disabled = false;
         message_input.addEventListener('keyup', (event) => {
             if (event.key === "Enter" && message_input.value.length > 0) {
-                console.log(message_input.value);
                 var current_date = new Date;
                 var time = addZero(current_date.getHours()) + ":" + addZero(current_date.getMinutes()) + ":" + addZero(current_date.getSeconds());
-                // console.log("Current time = ", addZero(current_date.getHours()) + ":" + addZero(current_date.getMinutes()) + ":" + addZero(current_date.getSeconds()));
-                // console.log("Current time = ", new Date(time).getHours(), ":");
                 socket.emit('send post', {room: myStorage.getItem('current_channel'), user: myStorage.getItem('username'), time: time, text: message_input.value});
-                console.log("Message to send: ", message_input.value);
                 message_input.value = "";
             }
         });
@@ -217,7 +197,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.del_message').forEach((item) => {
             item.addEventListener('click', event => {
                 const item = event.target.parentElement;
-                console.log(item);
                 item.style.animationPlayState = 'running';
                 item.addEventListener('animationend', () =>  {
                     item.remove();
@@ -226,7 +205,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     "time": item.querySelector('.message_timestamp').innerHTML,
                     "text": item.querySelector('.message_content').innerHTML
                 };
-                console.log("del_message =", message);
                 socket.emit('del message', {channel: localStorage.getItem('current_channel'),
                     message: message}, room=localStorage.getItem('current_channel'));
             });
@@ -238,8 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return new Handlebars.SafeString('<button class="btn btn-danger btn-xs del_message">x</button>');
         }
     });
-
-
 
 
 });

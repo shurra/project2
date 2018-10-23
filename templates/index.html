@@ -22,9 +22,7 @@
     <script id="users_list_item" type="text/x-handlebars-template">
         {% raw %}{{#each users}}
         <li class="channel">
-
             <span>{{ this.username }}</span>
-
         </li>
         {{/each}}{% endraw %}
     </script>
@@ -32,7 +30,7 @@
         {% raw %}{{#each messages}}
         <div class="message">
             <hr>
-            <img class="profile-pic" src="{{ this.pic_url }}">
+            <img class="profile-pic" src="{{ this.pic_url }}" alt="{{ this.user }} avatar">
             <span class="message_username">{{ this.user }}</span>
             <span class="message_timestamp">{{ this.time }}</span>
             {{{del_button this.user}}}
