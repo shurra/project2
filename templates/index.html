@@ -15,28 +15,27 @@
     <script id="channel_list_item" type="text/x-handlebars-template">
         {% raw %}{{#each channels}}
         <li class="rounded-right  channel" data-chname="{{ this }}">
-            <a class="channel_name">
-                <span># {{ this }}</span>
-            </a>
+            <span># {{ this }}</span>
         </li>
         {{/each}}{% endraw %}
     </script>
     <script id="users_list_item" type="text/x-handlebars-template">
         {% raw %}{{#each users}}
         <li class="channel">
-            <a class="channel_name">
-                <span>{{ this.username }}</span>
-            </a>
+
+            <span>{{ this.username }}</span>
+
         </li>
         {{/each}}{% endraw %}
     </script>
     <script id="messages_list_item" type="text/x-handlebars-template">
         {% raw %}{{#each messages}}
-        <hr>
         <div class="message">
-            <a class="profile-pic" href="{{ this.pic_url }}"></a>
+            <hr>
+            <img class="profile-pic" src="{{ this.pic_url }}">
             <span class="message_username">{{ this.user }}</span>
             <span class="message_timestamp">{{ this.time }}</span>
+            {{{del_button this.user}}}
             <span class="message_content">{{ this.text }}</span>
         </div>
         {{/each}}{% endraw %}
@@ -57,12 +56,12 @@
                 <div class="form-group row">
                     <div class="col-4"></div>
                     <div class="form-check col-2">
-                            <input type="radio" class="form-check-input" name="gender" value="male" checked>
-                            <img src="{{ url_for('static', filename='img/avatar_m.png') }}" height="32px" width="32px">
+                        <input type="radio" class="form-check-input" name="gender" value="male" checked>
+                        <img src="{{ url_for('static', filename='img/avatar_m.png') }}" height="32px" width="32px">
                     </div>
                     <div class="form-check col-2">
-                            <input type="radio" class="form-check-input" name="gender" value="female">
-                            <img src="{{ url_for('static', filename='img/avatar_f.png') }}" width="32px">
+                        <input type="radio" class="form-check-input" name="gender" value="female">
+                        <img src="{{ url_for('static', filename='img/avatar_f.png') }}" width="32px">
                     </div>
                     <div class="col-4"></div>
                 </div>
@@ -119,5 +118,9 @@
         </div>
     </div>
 </div>
+<audio controls id="message_sound">
+    <source src="{{ url_for('static', filename='chat_alertshort.mp3') }}" type="audio/ogg">
+    Your browser does not support the audio element.
+</audio>
 </body>
 </html>

@@ -1,5 +1,4 @@
 const myStorage = window.localStorage;
-// var username;
 var user_arr;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -11,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Connect to websocket
     var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
 
-    //If not user in local storage, open login form:
+    //If user not in local storage, open login form:
     if(!myStorage.getItem('username') || myStorage.getItem('username') === "") {
         //Listener for Login button
         const loginForm = document.querySelector('#loginForm').querySelector('form');
@@ -24,8 +23,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelector('.footer_username').innerHTML = new_user;
                 //set avatar
                 if (localStorage.getItem('gender') === "male") {
-                    document.querySelector('.footer').querySelector('.profile-pic').style.backgroundImage = "url(/static/img/avatar_m.png)";
+                    document.querySelector('.footer').querySelector('.profile-pic').style.backgroundImage = 'url("/static/img/avatar_m.png")';
+                } else {
+                    document.querySelector('.footer').querySelector('.profile-pic').style.backgroundImage = 'url("/static/img/avatar_f.png")';
                 }
+
                 // close Login Form
                 document.querySelector('#loginForm').style.display = 'none';
             }
@@ -42,22 +44,23 @@ document.addEventListener('DOMContentLoaded', () => {
         //set avatar
         if (localStorage.getItem('gender') === "male") {
             document.querySelector('.footer').querySelector('.profile-pic').style.backgroundImage = "url(/static/img/avatar_m.png)";
+        } else {
+            document.querySelector('.footer').querySelector('.profile-pic').style.backgroundImage = "url(/static/img/avatar_f.png)";
         }
     }
 
     // When connected, configure buttons
     socket.on('connect', () => {
         console.log("Connected...");
-        //TODO: If channel in local storage, create that channel after server restart
         // new channel button
         const new_channel_form = document.querySelector('#new_channel');
         new_channel_form.addEventListener('submit', (e) => {
             console.log(e);
             e.preventDefault();
             var c_name = new_channel_form.querySelector('input').value.trim();
-            if(!c_name.match(/^[0-9a-zA-Z]{1,16}$/)) {
-                alert('Illegal channel name. Only alphanumeric symbols allowed (max 16).');
-            }
+            // if(!c_name.match(/^[0-9a-zA-Z]{1,16}$/)) {
+            //     alert('Illegal channel name. Only alphanumeric symbols allowed (max 16).');
+            // }
             if (c_name) {
                 socket.emit('new channel', {'c_name': c_name});
                 //join that channel after creation
@@ -71,14 +74,19 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector(".input-box_text").disabled = true;
         //join saved channel after page load
         if (myStorage.getItem('current_channel') && myStorage.getItem('username')) {
-            // console.log("Boolean(current_channel) = ", Boolean(myStorage.getItem('current_channel')));
-            console.log("Joining saved channel after page load, saved channel = \"", myStorage.getItem('current_channel'),
-                "\", saved user = \"", myStorage.getItem('username'), "\"");
+            // console.log("ONCONNECT--Joining saved channel after page load, saved channel = \"", myStorage.getItem('current_channel'),
+            //     "\", saved user = \"", myStorage.getItem('username'), "\"");
             join_channel(myStorage.getItem('current_channel'));
         }
+        document.querySelector('.connection_status').innerHTML = "online";
+        document.querySelector('.connection_status').style.color = "white";
     });
 
-    socket.on('disconnect', () => {console.log("Server offline!")});
+    socket.on('disconnect', () => {
+        console.log("Server offline!");
+        document.querySelector('.connection_status').innerHTML = "offline";
+        document.querySelector('.connection_status').style.color = "red";
+    });
     //Receive channels update
     socket.on('channels', (data) => {
         console.log("Channels received = ", data);
@@ -94,19 +102,15 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 item['pic_url'] = "static/img/avatar_f.png";
             }
-
-            console.log(item);
         });
         user_arr = data;
-        console.log(data);
         users_list(data);
     });
 
     //Receive channels messages on joining channel
     socket.on('messages', (data) =>{
-        // console.log("User_arr = ", user_arr);
         data.forEach((item) => {
-           item['pic_url'] = user_arr
+            item['pic_url'] = user_arr.filter(_user => _user['username'] === item['user'])[0].pic_url;
         });
         console.log("messages received =", data);
         messages_list(data);
@@ -114,61 +118,72 @@ document.addEventListener('DOMContentLoaded', () => {
 
     //Receive message (post) in joined channel
     socket.on('post', (data) => {
-        console.log("new message received", data);
+        // console.log("new message received", data);
         show_message(data);
     });
 
+    //Remove message from list on 'message deleted'
+    socket.on('message deleted', (data) => {
+        const messages_container = document.querySelector('#messages');
+        messages_container.querySelectorAll('.message').forEach((element) => {
+            console.log(element.querySelector('.message_username').innerHTML, ":", element.querySelector('.message_timestamp').innerHTML);
+            if (element.querySelector('.message_username').innerHTML === data['user'] &&
+                element.querySelector('.message_timestamp').innerHTML === data['time'] &&
+                element.querySelector('.message_content').innerHTML === data['text']
+            ) {
+                element.style.animationPlayState = 'running';
+                element.addEventListener('animationend', () =>  {
+                    element.remove();
+                });
+            }
+        });
+    });
+
     function show_message(message) {
-        console.log("---message received: ", message);
+        document.getElementById('message_sound').play();
+        message['pic_url'] = user_arr.filter(_user => _user['username'] === message['user'])[0].pic_url;
         const message_container = document.querySelector('#messages');
         message_container.innerHTML += messages_list_item({'messages': [message]});
         message_container.scrollTop = message_container.scrollHeight;
+        del_message_button();
     }
 
     function messages_list(messages) {
-        console.log("messages received =", messages);
-        // console.log(document.querySelector('.message-history'));
         const messages_list = document.querySelector('#messages');
-        messages_list.innerHTML = messages_list_item({'messages': messages, 'users': user_arr});
+        messages_list.innerHTML = messages_list_item({'messages': messages});
         messages_list.scrollTop = messages_list.scrollHeight;
+        del_message_button();
     }
 
     function channels_list(channels) {
         document.querySelector('#channels_list').innerHTML = channel_list_item({'channels': channels});
         //Listeners for channels names
         document.querySelector('#channels_list').querySelectorAll('li').forEach((item) => {
-            // console.log(item.dataset.chname);
             console.log("Adding event listener to channel button", item.dataset.chname);
             item.addEventListener('click', () => {
                 if (myStorage.getItem('current_channel') === item.dataset.chname) {
                     return null
                 }
-                console.log("joining channel \"", item.dataset.chname, "\", user \"", myStorage.getItem('username'), "\"")
                 join_channel(item.dataset.chname);
-                // console.log("Channel = ", item.dataset.chname);
                 document.querySelector('#channels_list').querySelectorAll('li').forEach((item) => {
                     item.classList.remove('active');
                 });
                 item.classList.add('active');
-                // document.querySelector('.channel-menu_name').innerHTML = "# " + item.dataset.chname;
             });
             if (item.dataset.chname === myStorage.getItem('current_channel')) {
                 item.classList.add('active');
             }
-            // console.log(item, typeof(item))
         })
     }
 
     function join_channel(channel) {
-        //TODO: create channel and join, if channel in local storage, and not in server channels
-
         // Leave current channel, if joined
         console.log("saved channel = ", myStorage.getItem('current_channel'), "new channel = ", channel);
         if (myStorage.getItem('current_channel')) {
             socket.emit('leave', {room: myStorage.getItem('current_channel'), user: myStorage.getItem('username')});
         }
         myStorage.setItem('current_channel', channel);
-        console.log("joining channel \"", channel, "\", user \"", myStorage.getItem('username'), "\"")
+        console.log("joining channel =", channel, ", user =", myStorage.getItem('username'), ", gender =", myStorage.getItem('gender'));
         socket.emit('join', {room: channel, user: myStorage.getItem('username'), gender: myStorage.getItem('gender')});
         var message_input = document.querySelector('.input-box_text');
         message_input.disabled = false;
@@ -184,7 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 message_input.value = "";
             }
         });
-        // console.log("joined room = ", io.sockets.manager.roomClients[socket.id])
         document.querySelector('.channel-menu_name').innerHTML = "# " + channel;
     }
 
@@ -198,4 +212,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return i;
     }
+
+    function del_message_button() {
+        document.querySelectorAll('.del_message').forEach((item) => {
+            item.addEventListener('click', event => {
+                const item = event.target.parentElement;
+                console.log(item);
+                item.style.animationPlayState = 'running';
+                item.addEventListener('animationend', () =>  {
+                    item.remove();
+                });
+                var message = {"user": item.querySelector('.message_username').innerHTML,
+                    "time": item.querySelector('.message_timestamp').innerHTML,
+                    "text": item.querySelector('.message_content').innerHTML
+                };
+                console.log("del_message =", message);
+                socket.emit('del message', {channel: localStorage.getItem('current_channel'),
+                    message: message}, room=localStorage.getItem('current_channel'));
+            });
+        });
+    }
+
+    Handlebars.registerHelper('del_button', function(user) {
+        if (user === localStorage.getItem('username')) {
+            return new Handlebars.SafeString('<button class="btn btn-danger btn-xs del_message">x</button>');
+        }
+    });
+
+
+
+
 });
