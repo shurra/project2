@@ -36,12 +36,16 @@ def on_join(data):
     username = data['user']
     user_gender = data['gender']
     room = data['room']
+    if user_gender == "male":
+        pic_url = "static/img/avatar_m.png"
+    else:
+        pic_url = "static/img/avatar_f.png"
     # Create channel, if no exist
     if room not in [c.name for c in channels]:
         new_channel({'c_name': room})
     join_room(room)
     channel = find(channels, room)
-    channel.add_user(username, user_gender)
+    channel.add_user(username, user_gender, pic_url)
     emit('users', channel.users, room=room)
     emit('messages', channel.messages, room=room)
 
@@ -52,18 +56,22 @@ def on_leave(data):
     room = data['room']
     leave_room(room)
     channel = find(channels, room)
-    try:
-        channel.del_user(username)
-        emit('users', channel.users, room=room)
-    except:
-        print("error delete user from channel")
+    if channel:
+        if username in [u['username'] for u in channel.users]:
+            channel.del_user(username)
+            emit('users', channel.users, room=room)
 
 
 @socketio.on('send post')
 def on_send_post(data):
     channel = find(channels, data['room'])
-    channel.add_message({"user": data['user'], "time": data['time'], "text": data['text']})
-    emit('post', {"user": data['user'], "time": data['time'], "text": data['text']}, room=data['room'])
+    channel.add_message({"user": data['user'], "time": data['time'], "text": data['text'], "pic_url": data['pic_url']})
+    emit('post', {"user": data['user'],
+                  "time": data['time'],
+                  "text": data['text'],
+                  "pic_url": data['pic_url']
+                  },
+         room=data['room'])
 
 
 @socketio.on('del message')
@@ -91,14 +99,18 @@ class Channel:
         if message in self.messages:
             self.messages.remove(message)
 
-    def add_user(self, username, user_g):
-        user_data = {"username": username, "user_g": user_g}
+    def add_user(self, username, user_g, pic_url):
+        user_data = {"username": username, "user_g": user_g, "pic_url": pic_url}
         if user_data not in self.users:
-            self.users.append({"username": username, "user_g": user_g})
+            # self.users.append({"username": username, "user_g": user_g})
+            self.users.append(user_data)
 
     def del_user(self, username):
         user_data = [item for item in self.users if item["username"] == username].pop(0)
         self.users.remove(user_data)
+
+    def __str__(self):
+        return f"Channel name: {self.name}, joined users: {self.users}, messages: {self.messages}"
 
 
 def find(_list, value):

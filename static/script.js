@@ -1,5 +1,4 @@
 const myStorage = window.localStorage;
-var user_arr;
 
 document.addEventListener('DOMContentLoaded', () => {
 //Templates for channel in channels list and user in users list
@@ -85,29 +84,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     //Receive users update
     socket.on('users', (data) => {
-        // Set avatars url
-        data.forEach((item) => {
-            if (item['user_g'] === "male") {
-                item['pic_url'] = "static/img/avatar_m.png";
-            } else {
-                item['pic_url'] = "static/img/avatar_f.png";
-            }
-        });
-        user_arr = data;
-        users_list(data);
+        document.querySelector('#users_list').innerHTML = users_list_item({'users': data});
     });
 
     //Receive channels messages on joining channel
     socket.on('messages', (data) =>{
-        data.forEach((item) => {
-            item['pic_url'] = user_arr.filter(_user => _user['username'] === item['user'])[0].pic_url;
-        });
-        messages_list(data);
+        // console.log("messages received", data);
+        // messages_list(data);
+        const messages_list = document.querySelector('#messages');
+        messages_list.innerHTML = messages_list_item({'messages': data});
+        messages_list.scrollTop = messages_list.scrollHeight;
+        del_message_button();
     });
 
     //Receive message (post) in joined channel
     socket.on('post', (data) => {
-        show_message(data);
+        document.getElementById('message_sound').play();
+        const message_container = document.querySelector('#messages');
+        message_container.innerHTML += messages_list_item({'messages': [data]});
+        message_container.scrollTop = message_container.scrollHeight;
+        del_message_button();
     });
 
     //Remove message from list on 'message deleted'
@@ -125,22 +121,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-
-    function show_message(message) {
-        document.getElementById('message_sound').play();
-        message['pic_url'] = user_arr.filter(_user => _user['username'] === message['user'])[0].pic_url;
-        const message_container = document.querySelector('#messages');
-        message_container.innerHTML += messages_list_item({'messages': [message]});
-        message_container.scrollTop = message_container.scrollHeight;
-        del_message_button();
-    }
-
-    function messages_list(messages) {
-        const messages_list = document.querySelector('#messages');
-        messages_list.innerHTML = messages_list_item({'messages': messages});
-        messages_list.scrollTop = messages_list.scrollHeight;
-        del_message_button();
-    }
 
     function channels_list(channels) {
         document.querySelector('#channels_list').innerHTML = channel_list_item({'channels': channels});
@@ -169,21 +149,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         myStorage.setItem('current_channel', channel);
         socket.emit('join', {room: channel, user: myStorage.getItem('username'), gender: myStorage.getItem('gender')});
+        // message input
         var message_input = document.querySelector('.input-box_text');
         message_input.disabled = false;
         message_input.addEventListener('keyup', (event) => {
             if (event.key === "Enter" && message_input.value.length > 0) {
                 var current_date = new Date;
                 var time = addZero(current_date.getHours()) + ":" + addZero(current_date.getMinutes()) + ":" + addZero(current_date.getSeconds());
-                socket.emit('send post', {room: myStorage.getItem('current_channel'), user: myStorage.getItem('username'), time: time, text: message_input.value});
+                var pic_url;
+                if (myStorage.getItem('gender') === "male"){
+                    pic_url = "static/img/avatar_m.png";
+                } else {
+                    pic_url = "static/img/avatar_f.png";
+                }
+                socket.emit('send post', {room: myStorage.getItem('current_channel'), user: myStorage.getItem('username'), time: time, text: message_input.value, pic_url: pic_url});
                 message_input.value = "";
             }
         });
         document.querySelector('.channel-menu_name').innerHTML = "# " + channel;
-    }
-
-    function users_list(users) {
-        document.querySelector('#users_list').innerHTML = users_list_item({'users': users});
     }
 
     function addZero(i) {
@@ -203,7 +186,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 var message = {"user": item.querySelector('.message_username').innerHTML,
                     "time": item.querySelector('.message_timestamp').innerHTML,
-                    "text": item.querySelector('.message_content').innerHTML
+                    "text": item.querySelector('.message_content').innerHTML,
+                    "pic_url": item.querySelector('.profile-pic').getAttribute('src')
                 };
                 socket.emit('del message', {channel: localStorage.getItem('current_channel'),
                     message: message}, room=localStorage.getItem('current_channel'));
